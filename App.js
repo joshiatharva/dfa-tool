@@ -27,6 +27,7 @@ export default class App extends Component {
       title: "Draw Circle",
       isLine: false, 
       array: [],
+      evaluator: [],
       radius: 20,
       links: [],
       titleB: 'Selfloop disabled',
@@ -34,27 +35,16 @@ export default class App extends Component {
       evaluatorVisible: false,
       transition: '',
       tableVisible: false,
+      str: ""
     };
   }
 
+  /** Draws line between two nodes */
   drawLine = (evt) => {
-    // let e = evt.nativeEvent;
-    // let offset = {x: e.pageX - e.locationX, y: e.pageY - e.locationY};
-    // console.log("touch made");
     this.setState({array: this.state.array.concat(evt.nativeEvent)});
     if (this.state.array.length == 2) {
-      // console.log(this.state.array.length);
-      // this.ctx.beginPath();
-      // let e1 = this.state.array[0];
-      // let e2 = this.state.array[1];
-      // this.ctx.moveTo(e1.locationX, e1.locationY);
-      // this.ctx.lineTo(e2.locationX, e2.locationY);
-      // this.ctx.stroke();
-      // console.log(this.state.array.length);
       let e1 = this.state.array[0];
       let e2 = this.state.array[1];
-      // console.log("e1: " + e1.locationX + "," + e1.locationY);
-      // console.log("e2: " + e2.locationX + "," + e2.locationY);
       let node1 = this.selectObject(e1.locationX, e1.locationY);
       // console.log (node1);
       let node2 = this.selectObject(e2.locationX, e2.locationY);
@@ -86,23 +76,18 @@ export default class App extends Component {
       // this.setState({array: []});
       // this.resetCanvas();
     }
-    // console.log("touch = " + this.state.array.length);
-    // console.log(this.state.array);
 
   }
 
-  // containsPoint = (n, x, y) => {
-  //   return ((((x - n.x) * (x-n.x)) + (y-n.y)*(y-n.y)) < ((this.radius) * (this.radius)));
-  // } 
-
+  /** Evaluates string recursively using given State and remaining string */
+  /** Alerts true if successful - false if not  */
   evaluate(string, state){
-    console.log(string.charAt(0));
-    var str = '';
-    var newstate = '';
-    if (string == '') {
-      console.log("checking accept state");
+    if (string == "") {
+      this.setState({evaluator: this.state.evaluator.concat(state+" -> "+string+" -> "+this.isAcceptState(state))});
       return this.isAcceptState(state);
     } else {
+      var str = '';
+      var newstate = '';
       for (i = 0; i < this.state.links.length; i++) {
         console.log(i);
         console.log(this.state.links[i].nodeA.name + " " + state);
@@ -110,8 +95,11 @@ export default class App extends Component {
         if ((this.state.links[i].nodeA.name == state) && (this.state.links[i].transition == string.charAt(0))) {
           str = string.substring(1);
           newstate = this.state.links[i].nodeB.name;
-          console.log(str + " + " + newstate);
-          return this.evaluate(str, newstate);
+          this.setState({evaluator: this.state.evaluator.concat(state+" -> "+string+" -> "+newstate)});
+          console.log(str.length + " + " + newstate);
+          return this.evaluate(str, newstate); 
+        } else {
+          this.setState({evaluator: this.state.evaluator.concat(state+" -> "+string+" -> fail")});
         }
       }
       console.log("this triggered false");
@@ -119,14 +107,16 @@ export default class App extends Component {
     }
   }
 
+  /** CHecks whether state is accept state or not. */
   isAcceptState = (state) => {
     for (var i = 0; i < this.state.nodes.length; i++) {
       if ((this.state.nodes[i].name == state) && (this.state.nodes[i].acceptState == true)) {
         return true;
       }
-    }
+    } return false;
   }
 
+  /** Selects Node closest to location of touch */
   selectObject = (x, y) => {
     for (i=0; i < this.state.nodes.length; i++) {
       if (this.state.nodes[i].containsPoint(x, y)) {
@@ -136,6 +126,7 @@ export default class App extends Component {
     return null;
   }
 
+  /** Finds a line (if existant) within the set of edges */
   findLine = (node1, node2) => {
     for (i = 0; i < this.state.links; i++) {
       if (((this.state.links[i].nodeA.x == node1.x)  && (this.state.links[i].nodeA.y == node1.y)) && ((this.state.links[i].nodeB.x == node2.x) && (this.state.links[i].nodeB.y == node2.y))) {
@@ -144,6 +135,7 @@ export default class App extends Component {
     }
   }
 
+  /** Check whether two objects are equal by their start/end points */
   checkObject(node1, node2) {
     if ((node1.x === node2.x) && (node1.y === node2.y)) {
       return true;
@@ -152,6 +144,7 @@ export default class App extends Component {
     }
   }
 
+  /** Draws circle on canvas */
   handleCircle = (evt) => {
     // console.log("Touch registered");
     let n = this.selectObject(evt.nativeEvent.locationX, evt.nativeEvent.locationY);
@@ -178,6 +171,7 @@ export default class App extends Component {
     }
   }
 
+  /** Draws a self-loop on one node */
   drawSelfLoop = (evt) => {
     let n = this.selectObject(evt.nativeEvent.locationX, evt.nativeEvent.locationY);
     if (n != null) {
@@ -190,6 +184,8 @@ export default class App extends Component {
     }
   }
 
+
+  /** Removes all values from canvas */
   resetCanvas = () => {
     this.ctx.clearRect(0, 0, 1000, 1000);
     this.setState({nodes: [], array: [], links: []});
@@ -197,6 +193,7 @@ export default class App extends Component {
     this.ctx.fillRect(0, 0, 1000, 1000);
   }
 
+  /** INitialises Canvas */
   handleCanvas = (canvas) => {
     if (canvas != null) {
       this.ctx = canvas.getContext('2d');
@@ -209,16 +206,11 @@ export default class App extends Component {
     }
   }
 
+  /** Render the entire UI */
   render() {
     return (
       <View style={styles.container}>
         <Text>Here's the canvas!</Text>
-        {/* <PanGestureHandler> */}
-          {/* <TapGestureHandler
-            numberOfTaps={1}
-            enabled={true}
-            // onHandlerStateChange={this.handleCircle}
-            onGestureEvent={this.handleCircle}> */}
             <View onStartShouldSetResponder={(evt) => true}
               onResponderRelease={(evt) => {
                 if (this.state.isLine) {
@@ -230,8 +222,6 @@ export default class App extends Component {
               }>
               <Canvas ref={this.handleCanvas} /> 
             </View>
-          {/* </TapGestureHandler> */}
-        {/* </PanGestureHandler> */}
         <Button title="Reset Canvas" onPress={this.resetCanvas} />
         <Button title={this.state.title} onPress={() => {
           this.setState({isLine: !this.state.isLine},() => console.log(this.state.isLine));
@@ -258,7 +248,12 @@ export default class App extends Component {
         >
           <View style={styles.container}>
             <Text>Enter the transition here.</Text>
-            <TextInput placeholder="Enter the transition here" onChangeText={(text) => this.setState({transition: text})}/>
+            <TextInput placeholder="Enter the transition here" onChangeText={(text) => {
+              if (text == "") {
+                alert("Transitions must NOT be empty!");
+              } else {
+                this.setState({transition: text})
+              }}}/>
             <Button title="Set transition here" onPress={() => {
               let link = this.state.links[this.state.links.length-1];
               link.setName(this.state.transition);
@@ -275,10 +270,15 @@ export default class App extends Component {
         >
           <View style={styles.container}>
             <Text>Please enter the string to evaluate: </Text>
-            <TextInput placeholder="Enter the expression here" onChangeText={(text) => this.setState({str: text})}/>
+            <TextInput placeholder="Enter the expression here" onChangeText={(text) => {this.setState({str: text})}}/>
             <Button title="Evaluate" onPress={() => {
+              this.setState({evaluator: []});
               alert(this.evaluate(this.state.str, "q0"));
             }} />
+            <Text>Output: </Text>
+            {this.state.evaluator.map((item, index) => 
+              <Text key={index}>{item}</Text>
+            )}
             <Button title="Close Evaluator" onPress={() => this.setState({evaluatorVisible: false})} />
           </View>
         </Modal>
@@ -290,16 +290,13 @@ export default class App extends Component {
           onRequestClose={() => alert("Modal closed")}
           presentationStyle="pageSheet"
         >
-          <View style={styles.container}>
-            {console.log(this.state.links)}
+          <View style={styles.tContainer}>
             <Text>Here is the transition table: </Text>
             <Text>Nodes | Transitions | Node travelled to:</Text>
-            <FlatList
-              data={this.state.links}
-              renderItem={({item}) => (
-              <Text>  {item.nodeA.name} |      {item.transition}     | {item.nodeB.name} </Text>
+              {this.state.links.map((item, index) => 
+              <Text key={index}>  {item.nodeA.name} |      {item.transition}     | {item.nodeB.name} </Text>
               )}
-               />
+              <View style={styles.spacer}></View>
             <Button title="Close Table" onPress={() => this.setState({tableVisible: false})} />
           </View>
         </Modal>
@@ -315,4 +312,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tContainer: {
+    marginTop: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spacer: {
+    flex: 1,
+    marginTop: 50,
+  }
 });

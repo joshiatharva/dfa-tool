@@ -1,4 +1,7 @@
 export default class Node {
+/*************************************************************************************************** */   
+// DESIGN OF THIS CLASS BASED ON THE CLASSES BUILT BY EVAN WALLACE IN HIS FINITE STATE MACHINE DESIGNER
+/*************************************************************************************************** */
     constructor(x,y) {
         this.x = x;
         this.y = y;
